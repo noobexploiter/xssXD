@@ -14,25 +14,35 @@ import (
 
 func main() {
 	var c int
+	var s string
 	flag.IntVar(&c, "c", 50, "Set the Concurrency ")
+	flag.StringVar(&s, "s", "yeet", "Specify the payload to use")
 	flag.Parse()
 	inputs := make(chan string)
 	var wg sync.WaitGroup
 	input := bufio.NewScanner(os.Stdin)
 	go func() {
 		for input.Scan() {
+			ur, err := url.Parse(input.Text())
+			if err != nil {
+				continue
+			}
+			x := ur.Query()
+			if len(x) == 0 {
+				continue
+			}
 			inputs <- input.Text()
 		}
 		close(inputs)
 	}()
 	for i := 0; i < c; i++ {
 		wg.Add(1)
-		go workers(inputs, &wg)
+		go workers(inputs, &wg, s)
 	}
 	wg.Wait()
 }
 
-func buildurl(s string) {
+func buildurl(s string, st string) {
 	ur, err := url.Parse(s)
 	if err != nil {
 		return
@@ -43,15 +53,26 @@ func buildurl(s string) {
 	}
 	baseurl := ur.Scheme + "://" + ur.Host + ur.Path + "?"
 	params := url.Values{}
-	for i := range x {
-		params.Add(i, "ab1<ab2'ab3\"ab4>")
+	if st != "yeet" {
+		for i := range x {
+			params.Add(i, st)
+		}
+		finalurl := baseurl + params.Encode()
+		if specifiedpayload(finalurl, st) {
+			fmt.Println(s, "is reflecting", st)
+		}
+	} else {
+		for i := range x {
+			params.Add(i, "ab1<ab2'ab3\"ab4>")
+		}
+		finalurl := baseurl + params.Encode()
+		chars := checkxss(finalurl)
+		if len(chars) == 0 {
+			return
+		}
+		fmt.Println(s, "is reflecting", strings.Join(chars, ", "))
 	}
-	finalurl := baseurl + params.Encode()
-	chars := checkxss(finalurl)
-	if len(chars) == 0 {
-		return
-	}
-	fmt.Println(s, "is reflecting", strings.Join(chars, ", "))
+
 }
 
 func checkErr(e error) {
@@ -65,8 +86,8 @@ func checkxss(s string) []string {
 	//fmt.Println("TESTING", s)
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)   
-	defer fasthttp.ReleaseResponse(resp) 
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
 
 	req.SetRequestURI(s)
 
@@ -90,9 +111,27 @@ func checkxss(s string) []string {
 	return allowedchars
 }
 
-func workers(cha chan string, wg *sync.WaitGroup) {
+func workers(cha chan string, wg *sync.WaitGroup, s string) {
 	for i := range cha {
-		buildurl(i)
+		buildurl(i, s)
 	}
 	wg.Done()
+}
+
+func specifiedpayload(s string, st string) bool {
+	//fmt.Println("TESTING", s)
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req) 
+	defer fasthttp.ReleaseResponse(resp) 
+
+	req.SetRequestURI(s)
+
+	fasthttp.Do(req, resp)
+
+	bodyBytes := resp.Body()
+	if strings.Contains(string(bodyBytes), st) {
+		return true
+	}
+	return false
 }
