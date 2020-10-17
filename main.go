@@ -16,7 +16,7 @@ func main() {
 	var c int
 	var s string
 	flag.IntVar(&c, "c", 50, "Set the Concurrency ")
-	flag.StringVar(&s, "s", "yeet", "Specify the payload to use")
+	flag.StringVar(&s, "s", "none", "Specify the payload to use")
 	flag.Parse()
 	inputs := make(chan string)
 	var wg sync.WaitGroup
@@ -53,7 +53,7 @@ func buildurl(s string, st string) {
 	}
 	baseurl := ur.Scheme + "://" + ur.Host + ur.Path + "?"
 	params := url.Values{}
-	if st != "yeet" {
+	if st != "none" {
 		for i := range x {
 			params.Add(i, st)
 		}
@@ -86,8 +86,8 @@ func checkxss(s string) []string {
 	//fmt.Println("TESTING", s)
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)
-	defer fasthttp.ReleaseResponse(resp)
+	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
+	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
 
 	req.SetRequestURI(s)
 
@@ -122,8 +122,8 @@ func specifiedpayload(s string, st string) bool {
 	//fmt.Println("TESTING", s)
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req) 
-	defer fasthttp.ReleaseResponse(resp) 
+	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
+	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
 
 	req.SetRequestURI(s)
 
