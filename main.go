@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -12,6 +13,9 @@ import (
 )
 
 func main() {
+	var c int
+	flag.IntVar(&c, "c", 50, "Set the Concurrency ")
+	flag.Parse()
 	inputs := make(chan string)
 	var wg sync.WaitGroup
 	input := bufio.NewScanner(os.Stdin)
@@ -21,7 +25,7 @@ func main() {
 		}
 		close(inputs)
 	}()
-	for i := 0; i < 64; i++ {
+	for i := 0; i < c; i++ {
 		wg.Add(1)
 		go workers(inputs, &wg)
 	}
@@ -43,7 +47,7 @@ func buildurl(s string) {
 		params.Add(i, "<'\">")
 	}
 	finalurl := baseurl + params.Encode()
-	//fmt.Println("Testing", s)
+	//fmt.Printf("Testing %s \t", finalurl)
 	if checkxss(finalurl) {
 		fmt.Println(s, "might be vulnerable to xss")
 	}
