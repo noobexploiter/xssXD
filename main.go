@@ -44,13 +44,14 @@ func buildurl(s string) {
 	baseurl := ur.Scheme + "://" + ur.Host + ur.Path + "?"
 	params := url.Values{}
 	for i := range x {
-		params.Add(i, "<'\">")
+		params.Add(i, "ab1<ab2'ab3\"ab4>")
 	}
 	finalurl := baseurl + params.Encode()
-	//fmt.Printf("Testing %s \t", finalurl)
-	if checkxss(finalurl) {
-		fmt.Println(s, "might be vulnerable to xss")
+	chars := checkxss(finalurl)
+	if len(chars) == 0 {
+		return
 	}
+	fmt.Println(s, "is reflecting", strings.Join(chars, ", "))
 }
 
 func checkErr(e error) {
@@ -60,21 +61,33 @@ func checkErr(e error) {
 
 }
 
-func checkxss(s string) bool {
+func checkxss(s string) []string {
+	//fmt.Println("TESTING", s)
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
-	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
+	defer fasthttp.ReleaseRequest(req)   
+	defer fasthttp.ReleaseResponse(resp) 
 
 	req.SetRequestURI(s)
 
 	fasthttp.Do(req, resp)
 
+	allowedchars := []string{}
+
 	bodyBytes := resp.Body()
-	if strings.Contains(string(bodyBytes), "<'\">") {
-		return true
+	if strings.Contains(string(bodyBytes), "ab1<") {
+		allowedchars = append(allowedchars, "<")
 	}
-	return false
+	if strings.Contains(string(bodyBytes), "ab2'") {
+		allowedchars = append(allowedchars, "'")
+	}
+	if strings.Contains(string(bodyBytes), "ab3\"") {
+		allowedchars = append(allowedchars, "\"")
+	}
+	if strings.Contains(string(bodyBytes), "ab4>") {
+		allowedchars = append(allowedchars, ">")
+	}
+	return allowedchars
 }
 
 func workers(cha chan string, wg *sync.WaitGroup) {
