@@ -63,7 +63,7 @@ func buildurl(s string, st string) {
 		}
 	} else {
 		for i := range x {
-			params.Add(i, "ab1<ab2'ab3\"ab4>")
+			params.Add(i, "ab1<ab3\"ab4>")
 		}
 		finalurl := baseurl + params.Encode()
 		chars := checkxss(finalurl)
@@ -98,9 +98,6 @@ func checkxss(s string) []string {
 	bodyBytes := resp.Body()
 	if strings.Contains(string(bodyBytes), "ab1<") {
 		allowedchars = append(allowedchars, "<")
-	}
-	if strings.Contains(string(bodyBytes), "ab2'") {
-		allowedchars = append(allowedchars, "'")
 	}
 	if strings.Contains(string(bodyBytes), "ab3\"") {
 		allowedchars = append(allowedchars, "\"")
