@@ -123,6 +123,7 @@ func specifiedpayload(s string, st string) bool {
 	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
 
 	req.SetRequestURI(s)
+	req.Header.SetUserAgent("Mozilla/5.0 (platform; rv:geckoversion) Gecko/geckotrail Firefox/firefoxversion")
 
 	fasthttp.Do(req, resp)
 
