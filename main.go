@@ -15,26 +15,52 @@ import (
 func main() {
 	var c int
 	var s string
+	var file string
 	flag.IntVar(&c, "c", 50, "Set the Concurrency ")
 	flag.StringVar(&s, "s", "none", "Specify the payload to use")
+	flag.StringVar(&file, "f", "none", "Specify list of urls")
 	flag.Parse()
 	inputs := make(chan string)
 	var wg sync.WaitGroup
-	input := bufio.NewScanner(os.Stdin)
-	go func() {
-		for input.Scan() {
-			ur, err := url.Parse(input.Text())
-			if err != nil {
-				continue
+
+	if file == "none" {
+		input := bufio.NewScanner(os.Stdin)
+		go func() {
+			for input.Scan() {
+				ur, err := url.Parse(input.Text())
+				if err != nil {
+					continue
+				}
+				x := ur.Query()
+				if len(x) == 0 {
+					continue
+				}
+				inputs <- input.Text()
 			}
-			x := ur.Query()
-			if len(x) == 0 {
-				continue
-			}
-			inputs <- input.Text()
+			close(inputs)
+		}()
+	} else {
+		file, err := os.Open(file)
+		if err != nil {
+			fmt.Println("Error: File", file, "not Found")
 		}
-		close(inputs)
-	}()
+
+		scanner := bufio.NewScanner(file)
+		go func() {
+			for scanner.Scan() {
+				ur, err := url.Parse(scanner.Text())
+				if err != nil {
+					continue
+				}
+				x := ur.Query()
+				if len(x) == 0 {
+					continue
+				}
+				inputs <- scanner.Text()
+			}
+			close(inputs)
+		}()
+	}
 	for i := 0; i < c; i++ {
 		wg.Add(1)
 		go workers(inputs, &wg, s)
