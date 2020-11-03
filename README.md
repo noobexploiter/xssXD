@@ -56,3 +56,7 @@ http://public-firing-range.appspot.com/reflected/parameter/title?q=a is reflecti
 https://xss-game.appspot.com/level1/frame?query=asd is reflecting <, ', ", >
 http://sudo.co.il/xss/level0.php?email=asd# is reflecting <, ', ", >
 ```
+
+# UPDATES
+## 11/3/2020
+I added ssti payload {{7\*7}} to detect ssti too. Thanks to 
