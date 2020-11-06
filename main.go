@@ -16,9 +16,11 @@ func main() {
 	var c int
 	var s string
 	var file string
+	var verbose bool
 	flag.IntVar(&c, "c", 50, "Set the Concurrency ")
 	flag.StringVar(&s, "s", "none", "Specify the payload to use")
 	flag.StringVar(&file, "f", "none", "Specify list of urls")
+	flag.BoolVar(&verbose,"v",false,"Verbose mode")
 	flag.Parse()
 	inputs := make(chan string)
 	var wg sync.WaitGroup
@@ -63,12 +65,15 @@ func main() {
 	}
 	for i := 0; i < c; i++ {
 		wg.Add(1)
-		go workers(inputs, &wg, s)
+		go workers(inputs, &wg, s, verbose)
 	}
 	wg.Wait()
 }
 
-func buildurl(s string, st string) {
+func buildurl(s string, st string, ver bool) {
+	if ver != false{
+		fmt.Println("Testing",s)
+	}
 	ur, err := url.Parse(s)
 	if err != nil {
 		return
@@ -138,9 +143,9 @@ func checkxss(s string) []string {
 	return allowedchars
 }
 
-func workers(cha chan string, wg *sync.WaitGroup, s string) {
+func workers(cha chan string, wg *sync.WaitGroup, s string, verbose bool) {
 	for i := range cha {
-		buildurl(i, s)
+		buildurl(i, s, verbose)
 	}
 	wg.Done()
 }
