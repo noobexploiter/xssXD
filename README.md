@@ -60,3 +60,5 @@ http://sudo.co.il/xss/level0.php?email=asd# is reflecting <, ', ", >
 # UPDATES
 ## 11/3/2020
 I added ssti payload {{7\*7}} to detect ssti too.
+## 11/6/2020
+Added -v option for verbose mode
